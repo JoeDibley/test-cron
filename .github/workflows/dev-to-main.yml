@@ -54,6 +54,7 @@ jobs:
               --body "Automated daily sync from dev to main branch.
 
               Build verification: ✅ Passed
+
               Triggered by: Scheduled workflow"; then
               echo "✅ PR created successfully"
               pr_number=$(gh pr list --head dev --base main --state open --json number -q '.[0].number')
