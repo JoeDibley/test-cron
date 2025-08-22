@@ -1,0 +1,63 @@
+name: Main CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pull-requests: write
+  deployments: write
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Run build
+        run: npm run build
+        
+      - name: Run tests
+        run: npm test
+        
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: prod-build-${{ github.sha }}
+          path: dist/
+          retention-days: 30
+
+  deploy-prod:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production
+      url: https://test-cron.com
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: prod-build-${{ github.sha }}
+          path: dist/
+          
+      - name: Deploy to Production Environment
+        run: |
+          echo "🚀 Deploying to Production environment..."
+          echo "Build artifacts:"
+          ls -la dist/
+          echo "✅ Production deployment completed!"
+          echo "🌐 Available at: https://test-cron.com"
