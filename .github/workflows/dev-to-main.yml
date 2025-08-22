@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: read
 
 jobs:
   test-and-merge:
@@ -41,27 +42,36 @@ jobs:
       - name: Create or update PR
         if: steps.check-changes.outputs.changes != '0'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.PAT_TOKEN || github.token }}
         run: |
           set -e
           # Find or create PR dev -> main
           pr_number=$(gh pr list --head dev --base main --state open --json number -q '.[0].number' || echo "")
           if [ -z "$pr_number" ]; then
             echo "Creating new PR..."
-            gh pr create --base main --head dev \
+            if gh pr create --base main --head dev \
               --title "🤖 Scheduled dev→main sync $(date '+%Y-%m-%d')" \
               --body "Automated daily sync from dev to main branch.
 
               Build verification: ✅ Passed
-              Triggered by: Scheduled workflow"
-                          pr_number=$(gh pr list --head dev --base main --state open --json number -q '.[0].number')
-                        else
-                          echo "PR already exists: #${pr_number}"
-                        fi
-                        
-          # Add automerge label and enable auto-merge
-          gh pr edit "$pr_number" --add-label "automerge"
-          gh pr merge "$pr_number" --auto --merge
+              Triggered by: Scheduled workflow"; then
+              echo "✅ PR created successfully"
+              pr_number=$(gh pr list --head dev --base main --state open --json number -q '.[0].number')
+            else
+              echo "❌ Failed to create PR. You may need to set up PAT_TOKEN secret."
+              echo "📋 Changes ready for manual PR creation:"
+              git log main..dev --oneline
+              exit 0
+            fi
+          else
+            echo "PR already exists: #${pr_number}"
+          fi
+          
+          # Add automerge label and enable auto-merge if PR exists
+          if [ ! -z "$pr_number" ]; then
+            gh pr edit "$pr_number" --add-label "automerge" || echo "Could not add automerge label"
+            gh pr merge "$pr_number" --auto --merge || echo "Could not enable auto-merge"
+          fi
           
       - name: No changes to merge
         if: steps.check-changes.outputs.changes == '0'
