@@ -2,7 +2,7 @@ name: Scheduled dev → main sync
 
 on:
   schedule:
-    - cron: "35 15 * * *"   # Daily at 06:00 UTC
+    - cron: "40 15 * * *"   # Daily at 06:00 UTC
   workflow_dispatch:      # Allow manual trigger
 
 permissions:
