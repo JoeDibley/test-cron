@@ -67,10 +67,10 @@ jobs:
             echo "PR already exists: #${pr_number}"
           fi
           
-          # Add automerge label and enable auto-merge if PR exists
+          # Enable auto-merge with squash if PR exists
           if [ ! -z "$pr_number" ]; then
-            gh pr edit "$pr_number" --add-label "automerge" || echo "Could not add automerge label"
-            gh pr merge "$pr_number" --auto --merge || echo "Could not enable auto-merge"
+            echo "Enabling auto-merge with squash for PR #${pr_number}"
+            gh pr merge "$pr_number" --auto --squash || echo "Could not enable auto-merge (may need manual approval)"
           fi
           
       - name: No changes to merge
