@@ -52,8 +52,8 @@ jobs:
               --title "🤖 Scheduled dev→main sync $(date '+%Y-%m-%d')" \
               --body "Automated daily sync from dev to main branch.
 
-              Build verification: ✅ Passed
-              Triggered by: Scheduled workflow"
+Build verification: ✅ Passed
+Triggered by: Scheduled workflow"
             pr_number=$(gh pr list --head dev --base main --state open --json number -q '.[0].number')
           else
             echo "PR already exists: #${pr_number}"

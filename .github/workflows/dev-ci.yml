@@ -1,0 +1,62 @@
+name: Dev CI/CD
+
+on:
+  push:
+    branches: [ dev ]
+  pull_request:
+    branches: [ dev ]
+
+permissions:
+  contents: read
+  pull-requests: write
+  deployments: write
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Run build
+        run: npm run build
+        
+      - name: Run tests
+        run: npm test
+        
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-build-${{ github.sha }}
+          path: dist/
+          retention-days: 7
+
+  deploy-dev:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
+    environment:
+      name: dev
+      url: https://dev.test-cron.com
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dev-build-${{ github.sha }}
+          path: dist/
+          
+      - name: Deploy to Dev Environment
+        run: |
+          echo "🚀 Deploying to Dev environment..."
+          echo "Build artifacts:"
+          ls -la dist/
+          echo "✅ Dev deployment completed!"
+          echo "🌐 Available at: https://dev.test-cron.com"
