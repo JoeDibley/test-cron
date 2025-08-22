@@ -1,0 +1,13 @@
+{
+  "name": "test-cron-app",
+  "version": "1.0.0",
+  "description": "Simple web app for testing GitHub Actions cron workflows",
+  "main": "index.js",
+  "scripts": {
+    "build": "node build.js",
+    "start": "node index.js",
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
