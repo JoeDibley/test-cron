@@ -2,7 +2,7 @@ name: Scheduled dev → main sync
 
 on:
   schedule:
-    - cron: "0 6 * * *"   # Daily at 06:00 UTC
+    - cron: "35 15 * * *"   # Daily at 06:00 UTC
   workflow_dispatch:      # Allow manual trigger
 
 permissions:
@@ -34,6 +34,8 @@ jobs:
       - name: Check if there are changes to merge
         id: check-changes
         run: |
+          # Clean any build artifacts that might block checkout
+          git clean -fd
           git checkout main
           CHANGES=$(git log main..dev --oneline | wc -l)
           echo "changes=$CHANGES" >> $GITHUB_OUTPUT
