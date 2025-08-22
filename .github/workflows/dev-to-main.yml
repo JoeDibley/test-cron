@@ -56,7 +56,7 @@ Build verification: ✅ Passed
 Triggered by: Scheduled workflow"
             pr_number=$(gh pr list --head dev --base main --state open --json number -q '.[0].number')
           else
-            echo "PR already exists: #$pr_number"
+            echo "PR already exists: #${pr_number}"
           fi
           
           # Add automerge label and enable auto-merge
