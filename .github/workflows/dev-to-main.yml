@@ -1,0 +1,68 @@
+name: Scheduled dev → main sync
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # Daily at 06:00 UTC
+  workflow_dispatch:      # Allow manual trigger
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  test-and-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout dev branch
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Run build to verify it works
+        run: npm run build
+        
+      - name: Check if there are changes to merge
+        id: check-changes
+        run: |
+          git checkout main
+          CHANGES=$(git log main..dev --oneline | wc -l)
+          echo "changes=$CHANGES" >> $GITHUB_OUTPUT
+          git checkout dev
+          
+      - name: Create or update PR
+        if: steps.check-changes.outputs.changes != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          # Find or create PR dev -> main
+          pr_number=$(gh pr list --head dev --base main --state open --json number -q '.[0].number' || echo "")
+          if [ -z "$pr_number" ]; then
+            echo "Creating new PR..."
+            gh pr create --base main --head dev \
+              --title "🤖 Scheduled dev→main sync $(date '+%Y-%m-%d')" \
+              --body "Automated daily sync from dev to main branch.
+
+              Build verification: ✅ Passed
+              Triggered by: Scheduled workflow"
+            pr_number=$(gh pr list --head dev --base main --state open --json number -q '.[0].number')
+          else
+            echo "PR already exists: #${pr_number}"
+          fi
+          
+          # Add automerge label and enable auto-merge
+          gh pr edit "$pr_number" --add-label "automerge"
+          gh pr merge "$pr_number" --auto --merge
+          
+      - name: No changes to merge
+        if: steps.check-changes.outputs.changes == '0'
+        run: echo "No new changes in dev branch to merge to main"
